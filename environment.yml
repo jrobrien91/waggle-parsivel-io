@@ -1,0 +1,12 @@
+name: waggle_parsivel 
+channels:
+  - conda-forge
+  - defaults
+  - pyviz
+dependencies:
+  - python=3.9
+  - pyserial
+  - parse
+  - pip
+  - pip:
+    - pywaggle
