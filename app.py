@@ -1,36 +1,43 @@
-import serial
+"""
+This module interfaces with the OTT Parsivel2 and writes data to text file
+before upload to Beehive via Waggle
+
+To display currently available serial ports:
+python -m serial.tools.list_ports
+"""
+
 import time
 import argparse
 import csv
 
 from datetime import datetime, timezone
 
-# To display current ports:
-# python -m serial.tools.list_ports
+import serial
 
-# Function to generate the filename based on the current time
 def define_filename(site):
+    """Function to generate the filename based on the current time"""
     current_time = datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S')
     return site + '.parsivel2.' + current_time + '.csv'
-    
-def main(args):
+
+def main(input_args):
+    """Establish Serial Connection and Write Parsivel Data to file"""
     # Initialize the Serial Connection:
     i = 0
-    with serial.Serial(args.device,
-                       args.baud_rate,
-                       parity=serial.PARITY_NONE, 
+    with serial.Serial(input_args.device,
+                       input_args.baud_rate,
+                       parity=serial.PARITY_NONE,
                        stopbits=serial.STOPBITS_ONE,
                        bytesize=serial.EIGHTBITS,
                        timeout = 1) as ser:
         # Define the Filename for the initial Output file
-        nout = define_filename(args.site)
+        nout = define_filename(input_args.site)
         print(f"Initializing Output File: {nout}")
         # Open the file and create the CSV writer
-        nfile = open(nout, mode='w', newline='')
+        nfile = open(nout, mode='w', encoding="ascii", newline='')
         writer = csv.writer(nfile, delimiter=';')
         # Write the file header information
         ## NOTE - dependent on telegram programmed into the instrument
-        telegram = ["Timestamp",
+        telegram = ["Timestamp (UTC)",
                     "\tSensor Serial Num (%13)",
                     "\tSensor Date (%21)",
                     "\tSensor Time (%20)", 
@@ -74,15 +81,20 @@ def main(args):
             last_timestamp = time.gmtime()  # Keep track of the last time we checked
             while True:
                 # Check current time, if past the define frequency, generate new file
-                current_timestamp = time.gmtime() 
-                if current_timestamp.tm_min % args.freq == 0 and current_timestamp.tm_min != last_timestamp.tm_min:
+                current_timestamp = time.gmtime()
+                if (current_timestamp.tm_min % input_args.freq == 0
+                        and current_timestamp.tm_min != last_timestamp.tm_min):
+
                     # Close the current file and create a new one
                     nfile.close()
                     # Define a new filename
-                    current_filename = define_filename(args.site)
+                    current_filename = define_filename(input_args.site)
                     print(f"Switching to a new file: {current_filename}")
                     # Open the new file
-                    nfile = open(current_filename, mode='w', newline='')
+                    nfile = open(current_filename,
+                                 mode='w',
+                                 encoding="ascii",
+                                 newline='')
                     writer = csv.writer(nfile, delimiter=';')
                     # Update the last checked time
                     last_timestamp = current_timestamp
@@ -90,17 +102,17 @@ def main(args):
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
                 # Check the serial connection. If not defined, re-establish.
-                try: 
-                    if ser == None:
-                        ser = serial.Serial(args.device,
-					                        args.baud_rate,
+                try:
+                    if ser is None:
+                        ser = serial.Serial(input_args.device,
+					                        input_args.baud_rate,
 					                        parity=serial.PARITY_NONE,
 					                        stopbits=serial.STOPBITS_ONE,
 					                        bytesize=serial.EIGHTBITS,
 					                        timeout = 1)
                         print("Reconnecting Serial Connection")
                     data = ser.readlines()
-                    if args.verbose:
+                    if input_args.verbose:
                         print(i, datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
                         print("\n")
                         print(data)
@@ -111,8 +123,8 @@ def main(args):
                         writer.writerow(data_out)
                         nfile.flush()
                     i += 1
-                except:
-                    if(not(ser == None)):
+                except serial.SerialException:
+                    if not ser is None:
                         ser.close()
                         ser = None
                         print("Disconnecting")
@@ -128,7 +140,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Script for interfacing with OTT Parsivel2 datastream")
- 
+
     parser.add_argument("--verbose",
                         action="store_true",
                         dest='verbose',
@@ -167,4 +179,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(args)
-
