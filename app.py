@@ -148,11 +148,13 @@ def list_files(img_dir):
     ##        print(f"{fname}: {file_size} bytes")
     # create a Path object
     dir_path = Path(img_dir)
-    files = list(dir_path.glob("*.csv"))
-    if files:
-        for nfile in files:
-            file_size = nfile.stat().st_size
-            print(f"{nfile}: {file_size} bytes")
+    saved_files = list(dir_path.glob("*.csv"))
+    if saved_files:
+        print(saved_files)
+        for sfile in saved_files:
+            print(sfile)
+        #    file_size = nfile.stat().st_size
+        #    print(f"{nfile}: {file_size} bytes")
 
 def define_filename(site):
     """Function to generate the filename based on the current time"""
@@ -186,8 +188,6 @@ def main(input_args):
         writer.writerow(telegram_units)
         try:
             last_timestamp = time.gmtime()  # Keep track of the last time we checked
-            # check on the files
-            print('current path/files: ', list_files(input_args.outdir))
             while True:
                 # Check current time, if past the defined temporal frequency,
                 # generate new file
@@ -215,7 +215,8 @@ def main(input_args):
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
                     # check on the files
-                    print('updated path/files: ', list_files(input_args.outdir))
+                    print('updated path/files: ')
+                    list_files(input_args.outdir)
                 # Check the serial connection. If not defined, re-establish.
                 try:
                     if ser is None:
