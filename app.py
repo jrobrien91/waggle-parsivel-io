@@ -9,6 +9,7 @@ python -m serial.tools.list_ports
 import time
 import argparse
 import csv
+import os
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -132,6 +133,20 @@ def define_telegram(site):
 
     return telegram, telegram_units
 
+def list_files(img_dir):
+    """
+    Lists all files within a directory and their sizes in bytes.
+
+    Input:
+        dir: The path to the directory to list files from within the DockerFile
+            image.
+    """
+    for fname in os.listdir(img_dir):
+        fpath = os.path.join(img_dir, fname)
+        print("filepath: ", fpath)
+        if os.path.isfile(fpath):
+            file_size = os.path.getsize(fpath)
+            print(f"{fname}: {file_size} bytes")
 
 def define_filename(site):
     """Function to generate the filename based on the current time"""
@@ -263,5 +278,7 @@ if __name__ == '__main__':
                         help="Site Identifer for Deployment location"
                         )
     args = parser.parse_args()
+
+    print('initial path/files: ', list_files('.'))
 
     main(args)
