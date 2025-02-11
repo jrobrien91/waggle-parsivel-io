@@ -150,11 +150,10 @@ def list_files(img_dir):
     dir_path = Path(img_dir)
     saved_files = list(dir_path.glob("*.csv"))
     if saved_files:
-        print(saved_files)
         for sfile in saved_files:
-            print(sfile)
-        #    file_size = nfile.stat().st_size
-        #    print(f"{nfile}: {file_size} bytes")
+            ##print(sfile)
+            file_size = sfile.stat().st_size
+            print(f"{sfile}: {file_size} bytes")
 
 def define_filename(site):
     """Function to generate the filename based on the current time"""
