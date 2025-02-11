@@ -148,10 +148,10 @@ def list_files(img_dir):
             file_size = os.path.getsize(fpath)
             print(f"{fname}: {file_size} bytes")
 
-def define_filename(site):
+def define_filename(site, out_dir):
     """Function to generate the filename based on the current time"""
     current_time = datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S')
-    return site + '.parsivel2.' + current_time + '.csv'
+    return out_dir + site + '.parsivel2.' + current_time + '.csv'
 
 def main(input_args):
     """Establish Serial Connection and Write Parsivel Data to file"""
@@ -163,7 +163,7 @@ def main(input_args):
                        bytesize=serial.EIGHTBITS,
                        timeout = 1) as ser:
         # Define the Filename for the initial Output file
-        nout = define_filename(input_args.site)
+        nout = define_filename(input_args.site, input_args.outdir)
         print(f"Initializing Output File: {nout}")
         # Open the file and create the CSV writer
         nfile = open(nout, mode='w', encoding="ascii", newline='')
@@ -176,7 +176,7 @@ def main(input_args):
         try:
             last_timestamp = time.gmtime()  # Keep track of the last time we checked
             # check on the files
-            print('current path/files: ', list_files('.'))
+            print('current path/files: ', list_files(input_args.outdir))
             while True:
                 # Check current time, if past the defined temporal frequency,
                 # generate new file
@@ -186,7 +186,8 @@ def main(input_args):
                     # Close the current file and create a new one
                     nfile.close()
                     # Define a new filename
-                    current_filename = define_filename(input_args.site)
+                    current_filename = define_filename(input_args.site,
+                                                       input_args.outdir)
                     print(f"Switching to a new file: {current_filename}")
                     # Open the new file
                     nfile = open(current_filename,
@@ -200,7 +201,7 @@ def main(input_args):
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
                     # check on the files
-                    print('updated path/files: ', list_files('.'))
+                    print('updated path/files: ', list_files(input_args.outdir))
                 # Check the serial connection. If not defined, re-establish.
                 try:
                     if ser is None:
@@ -249,36 +250,43 @@ if __name__ == '__main__':
                         type=bool,
                         dest="publish",
                         default=True,
-                        help="Enable Publishing of Files to Beehive")
+                        help="[Boolean|Default True] Enable Publishing of Files to Beehive"
+                        )
     parser.add_argument("--device",
                         type=str,
                         dest='device',
                         default="/dev/ttyUSB1",
-                        help="Specific Serial Port for Device Communication"
+                        help="[str] Specific Serial Port for Device Communication"
                         )
     parser.add_argument("--baudrate",
                         type=int,
                         dest='baud_rate',
                         default=19200,
-                        help="Baud Rate for Serial Device Communication"
+                        help="[int] Baud Rate for Serial Device Communication"
                         )
     parser.add_argument("--format",
                         type=str,
                         dest='output',
                         default="csv",
-                        help="output file format (csv or )"
+                        help="[str] output file format (csv or )"
                         )
     parser.add_argument("--frequency",
                         type=int,
                         default=5,
                         dest="freq",
-                        help="Temporal Frequency of File Generation"
+                        help="[int] Temporal Frequency of File Generation"
                         )
     parser.add_argument("--site",
                         type=str,
                         default="atmos",
                         dest="site",
-                        help="Site Identifer for Deployment location"
+                        help="[str] Site Identifer for Deployment location"
+                        )
+    parser.add_argument("--outdir",
+                        type=str,
+                        dest="outdir",
+                        default="./data/",
+                        help="[str] Directory where to output files to"
                         )
     args = parser.parse_args()
 
