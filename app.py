@@ -175,13 +175,14 @@ def main(input_args):
         writer.writerow(telegram_units)
         try:
             last_timestamp = time.gmtime()  # Keep track of the last time we checked
+            # check on the files
+            print('current path/files: ', list_files('.'))
             while True:
                 # Check current time, if past the defined temporal frequency,
                 # generate new file
                 current_timestamp = time.gmtime()
                 if (current_timestamp.tm_min % input_args.freq == 0
                         and current_timestamp.tm_min != last_timestamp.tm_min):
-
                     # Close the current file and create a new one
                     nfile.close()
                     # Define a new filename
@@ -198,6 +199,8 @@ def main(input_args):
                     # Write the file header information
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
+                    # check on the files
+                    print('updated path/files: ', list_files('.'))
                 # Check the serial connection. If not defined, re-establish.
                 try:
                     if ser is None:
@@ -278,7 +281,5 @@ if __name__ == '__main__':
                         help="Site Identifer for Deployment location"
                         )
     args = parser.parse_args()
-
-    print('initial path/files: ', list_files('.'))
 
     main(args)
