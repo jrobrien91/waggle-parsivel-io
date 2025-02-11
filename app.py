@@ -19,7 +19,7 @@ from waggle.plugin import Plugin
 
 def define_telegram(site):
     """Fuction to define the telegram for the specific site"""
-    if site == "adm" | site == "ADM":
+    if site == "adm" or site == "ADM":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
         telegram = ["Timestamp (UTC)",
@@ -61,7 +61,7 @@ def define_telegram(site):
                           "\tm/s",
                           "\t#"]
 
-    elif site == "atmos" | site == "ATMOS":
+    elif site == "atmos" or site == "ATMOS":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
         telegram = ["Timestamp (UTC)",
