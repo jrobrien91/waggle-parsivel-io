@@ -200,7 +200,7 @@ def main(input_args):
                     nfile = define_filename(input_args.site)
                     print(f"Switching to a new file: {nfile}")
                     # Define the Path to the CSV file
-                    csv_path = Path(input_args.outdir) / nout
+                    csv_path = Path(input_args.outdir) / nfile
                     # Ensure the parent directory exists
                     csv_path.parent.mkdir(parents=True, exist_ok=True)
                     # Open the new file
