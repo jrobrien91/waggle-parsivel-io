@@ -61,7 +61,6 @@ def define_telegram(site):
                           "\tlog10(1/m3 mm)",
                           "\tm/s",
                           "\t#"]
-
     elif site == "atmos" or site == "ATMOS":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
@@ -141,17 +140,25 @@ def list_files(img_dir):
         dir: The path to the directory to list files from within the DockerFile
             image.
     """
-    for fname in os.listdir(img_dir):
-        fpath = os.path.join(img_dir, fname)
-        print("filepath: ", fpath)
-        if os.path.isfile(fpath):
-            file_size = os.path.getsize(fpath)
-            print(f"{fname}: {file_size} bytes")
+    ##for fname in os.listdir(img_dir):
+    ##    fpath = os.path.join(img_dir, fname)
+    ##    print("filepath: ", fpath)
+    ##    if os.path.isfile(fpath):
+    ##        file_size = os.path.getsize(fpath)
+    ##        print(f"{fname}: {file_size} bytes")
+    # create a Path object
+    dir_path = Path(img_dir)
+    files = list(dir_path.glob("*.csv"))
+    if files:
+        for nfile in files:
+            file_size = nfile.stat().st_size
+            print(f"{nfile}: {file_size} bytes")
 
-def define_filename(site, out_dir):
+def define_filename(site):
     """Function to generate the filename based on the current time"""
     current_time = datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S')
-    return out_dir + site + '.parsivel2.' + current_time + '.csv'
+
+    return site + '.parsivel2.' + current_time + '.csv'
 
 def main(input_args):
     """Establish Serial Connection and Write Parsivel Data to file"""
@@ -163,10 +170,14 @@ def main(input_args):
                        bytesize=serial.EIGHTBITS,
                        timeout = 1) as ser:
         # Define the Filename for the initial Output file
-        nout = define_filename(input_args.site, input_args.outdir)
+        nout = define_filename(input_args.site)
         print(f"Initializing Output File: {nout}")
-        # Open the file and create the CSV writer
-        nfile = open(nout, mode='w', encoding="ascii", newline='')
+        # Define the Path to the CSV file
+        csv_path = Path(input_args.outdir) / nout
+        # Ensure the parent directory exists
+        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        # Open the file
+        nfile = open(csv_path, mode='w', encoding="ascii", newline='')
         writer = csv.writer(nfile, delimiter=';')
         # Write the file header information
         ## NOTE - dependent on telegram programmed into the instrument
@@ -186,11 +197,14 @@ def main(input_args):
                     # Close the current file and create a new one
                     nfile.close()
                     # Define a new filename
-                    current_filename = define_filename(input_args.site,
-                                                       input_args.outdir)
-                    print(f"Switching to a new file: {current_filename}")
+                    nfile = define_filename(input_args.site)
+                    print(f"Switching to a new file: {nfile}")
+                    # Define the Path to the CSV file
+                    csv_path = Path(input_args.outdir) / nout
+                    # Ensure the parent directory exists
+                    csv_path.parent.mkdir(parents=True, exist_ok=True)
                     # Open the new file
-                    nfile = open(current_filename,
+                    nfile = open(csv_path,
                                  mode='w',
                                  encoding="ascii",
                                  newline='')
@@ -212,6 +226,7 @@ def main(input_args):
 					                        bytesize=serial.EIGHTBITS,
 					                        timeout = 1)
                         print("Reconnecting Serial Connection")
+                    # Read data from the instrument
                     data = ser.readlines()
                     if input_args.verbose:
                         print(datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
@@ -285,7 +300,7 @@ if __name__ == '__main__':
     parser.add_argument("--outdir",
                         type=str,
                         dest="outdir",
-                        default="./data/",
+                        default="./data",
                         help="[str] Directory where to output files to"
                         )
     args = parser.parse_args()
