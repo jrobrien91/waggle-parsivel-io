@@ -165,9 +165,8 @@ def publish_file(file_path):
     """Utilizing threading, publish file to Beehive"""
     def upload_file(file_path):
         """Call the Waggle Plugin"""
-        timestamp=datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S")
         with Plugin() as plugin:
-            plugin.upload_file(file_path, timestamp=timestamp)
+            plugin.upload_file(file_path, timestamp=time.time_ns())
         print(f"Published {file_path}")
 
     # Define threads
