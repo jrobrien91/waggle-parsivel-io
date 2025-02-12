@@ -171,9 +171,10 @@ def publish_file(file_path):
         print(f"Published {file_path}")
 
     # Define threads
-    thread = threading.Thread(target=upload_file, args=file_path)
-    thread.start()
-    thread.join()
+    upload_file(file_path)
+    ##thread = threading.Thread(target=upload_file, args=file_path)
+    ##thread.start()
+    ##thread.join()
 
 def main(input_args):
     """Establish Serial Connection and Write Parsivel Data to file"""
