@@ -191,6 +191,7 @@ def main(input_args):
         # Open the file
         nfile = open(csv_path, mode='w', encoding="ascii", newline='')
         writer = csv.writer(nfile, delimiter=';')
+        print(f"Initializing file: {nfile.name}")
         # Write the file header information
         ## NOTE - dependent on telegram programmed into the instrument
         telegram, telegram_units = define_telegram(input_args.site)
@@ -206,6 +207,10 @@ def main(input_args):
                         and current_timestamp.tm_min != last_timestamp.tm_min):
                     # Close the current file and create a new one
                     nfile.close()
+                    # if desired, check on current files and file sizes
+                    if input_args.verbose:
+                        # check on the files
+                        list_files(input_args.outdir)
                     # If publishing is desired, upload via Waggle
                     if input_args.publish:
                         publish_file(nfile.name)
@@ -214,14 +219,12 @@ def main(input_args):
                     # Open the new file
                     nfile = open(csv_path, mode='w', encoding="ascii", newline='')
                     writer = csv.writer(nfile, delimiter=';')
+                    print(f"Initializing new file: {nfile.name}")
                     # Write the file header information
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
                     # Update the last checked time
                     last_timestamp = current_timestamp
-                    if input_args.verbose:
-                        # check on the files
-                        list_files(input_args.outdir)
                 # Check the serial connection. If not defined, re-establish.
                 try:
                     if ser is None:
@@ -234,10 +237,10 @@ def main(input_args):
                         print(f"Reconnecting Serial Connection with {input_args.device}")
                     # Read data from the instrument
                     data = ser.readlines()
-                    if input_args.verbose:
-                        print(datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
-                        print("\n")
-                        print(data)
+                    ##if input_args.verbose:
+                    ##    print(datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
+                    ##    print("\n")
+                    ##    print(data)
                     if data:
                         # Assemble the output list
                         data_out = [datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')]
