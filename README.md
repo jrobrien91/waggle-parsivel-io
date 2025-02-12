@@ -50,15 +50,15 @@ To execute the OTT Parsivel2 I/O Plugin:
 cd waggle-parsivel-io
 sudo pluginctl build .
 ```
-1. Next, deploy the plugin via `pluginctl`
+2. Next, deploy the plugin via `pluginctl`
 ```bash
 sudo pluginctl deploy -n parsivel --selector zone=core --privileged 10.31.81.1:5000/local/waggle-parsivel-io
 ```
-1. Verify the image deployed successfully
+3. Verify the image deployed successfully
 ```bash
 sudo pluginctl ps
 ```
-##### Examples:
+#### Examples:
 1. To change the default serial device:
 ```bash
 sudo pluginctl deploy -n parsivel --selector zone=core --privileged 10.31.81.1:5000/local/waggle-parsivel-io -- --device /dev/ttyUSB5
@@ -76,4 +76,18 @@ sudo pluginctl deploy -n parsivel --selector zone=core --privileged 10.31.81.1:5
 If utilizing a local computer and not the Waggle node, reference the application directly
 ```bash
 python app.py --device "/dev/ttyUSB5" --verbose
+```
+
+## Access the Data
+```python
+import sage_data_client
+
+df = sage_data_client.query(
+    start="2025-02-12T16:00:00Z",
+    end="2025-02-12T17:00:00.000Z", 
+    filter={
+        "plugin": "10.31.81.1:5000/local/waggle-parsivel-io.*",
+        "vsn": "W09F"
+    }
+)
 ```
