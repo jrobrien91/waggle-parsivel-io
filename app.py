@@ -208,8 +208,7 @@ def main(input_args):
                     nfile.close()
                     # If publishing is desired, upload via Waggle
                     if input_args.publish:
-                        #publish_file(nfile)
-                        print(nfile)
+                        publish_file(nfile.name)
                     # Define a new filename
                     csv_path = define_filename(input_args.site, input_args.outdir)
                     # Open the new file
