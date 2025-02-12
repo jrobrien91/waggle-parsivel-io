@@ -9,7 +9,7 @@ python -m serial.tools.list_ports
 import time
 import argparse
 import csv
-import os
+import threading
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -136,33 +136,48 @@ def list_files(img_dir):
     """
     Lists all files within a directory and their sizes in bytes.
 
-    Input:
-        dir: The path to the directory to list files from within the DockerFile
-            image.
+    Parameters:
+        img_dir: The path to the directory to list files from within
+            the DockerFile image.
     """
-    ##for fname in os.listdir(img_dir):
-    ##    fpath = os.path.join(img_dir, fname)
-    ##    print("filepath: ", fpath)
-    ##    if os.path.isfile(fpath):
-    ##        file_size = os.path.getsize(fpath)
-    ##        print(f"{fname}: {file_size} bytes")
-    # create a Path object
     dir_path = Path(img_dir)
-    saved_files = list(dir_path.glob("*.csv"))
+    saved_files = sorted(list(dir_path.glob("*.csv")))
     if saved_files:
+        print('updated path/files: ')
         for sfile in saved_files:
-            ##print(sfile)
             file_size = sfile.stat().st_size
             print(f"{sfile}: {file_size} bytes")
 
-def define_filename(site):
+def define_filename(site, outdir):
     """Function to generate the filename based on the current time"""
-    current_time = datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S')
+    nout = (site +
+            '.parsivel2.' +
+            datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S") +
+            '.csv')
+    # Define the Path to the CSV file
+    csv_path = Path(outdir) / nout
+    # Ensure the parent directory exists
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
 
-    return site + '.parsivel2.' + current_time + '.csv'
+    return csv_path
+
+def publish_file(file_path):
+    """Utilizing threading, publish file to Beehive"""
+    def upload_file(file_path):
+        """Call the Waggle Plugin"""
+        timestamp=datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S")
+        with Plugin() as plugin:
+            plugin.upload_file(file_path, timestamp=timestamp)
+        print(f"Published {file_path}")
+
+    # Define threads
+    thread = threading.Thread(target=upload_file, args=file_path)
+    thread.start()
+    thread.join()
 
 def main(input_args):
     """Establish Serial Connection and Write Parsivel Data to file"""
+
     # Initialize the Serial Connection:
     with serial.Serial(input_args.device,
                        input_args.baud_rate,
@@ -170,13 +185,9 @@ def main(input_args):
                        stopbits=serial.STOPBITS_ONE,
                        bytesize=serial.EIGHTBITS,
                        timeout = 1) as ser:
+        print(f"Serial connection to {input_args.device} is open")
         # Define the Filename for the initial Output file
-        nout = define_filename(input_args.site)
-        print(f"Initializing Output File: {nout}")
-        # Define the Path to the CSV file
-        csv_path = Path(input_args.outdir) / nout
-        # Ensure the parent directory exists
-        csv_path.parent.mkdir(parents=True, exist_ok=True)
+        csv_path = define_filename(input_args.site, input_args.outdir)
         # Open the file
         nfile = open(csv_path, mode='w', encoding="ascii", newline='')
         writer = csv.writer(nfile, delimiter=';')
@@ -195,27 +206,23 @@ def main(input_args):
                         and current_timestamp.tm_min != last_timestamp.tm_min):
                     # Close the current file and create a new one
                     nfile.close()
+                    # If publishing is desired, upload via Waggle
+                    if input_args.publish:
+                        #publish_file(nfile)
+                        print(nfile)
                     # Define a new filename
-                    nfile = define_filename(input_args.site)
-                    print(f"Switching to a new file: {nfile}")
-                    # Define the Path to the CSV file
-                    csv_path = Path(input_args.outdir) / nfile
-                    # Ensure the parent directory exists
-                    csv_path.parent.mkdir(parents=True, exist_ok=True)
+                    csv_path = define_filename(input_args.site, input_args.outdir)
                     # Open the new file
-                    nfile = open(csv_path,
-                                 mode='w',
-                                 encoding="ascii",
-                                 newline='')
+                    nfile = open(csv_path, mode='w', encoding="ascii", newline='')
                     writer = csv.writer(nfile, delimiter=';')
-                    # Update the last checked time
-                    last_timestamp = current_timestamp
                     # Write the file header information
                     writer.writerow(telegram)
                     writer.writerow(telegram_units)
-                    # check on the files
-                    print('updated path/files: ')
-                    list_files(input_args.outdir)
+                    # Update the last checked time
+                    last_timestamp = current_timestamp
+                    if input_args.verbose:
+                        # check on the files
+                        list_files(input_args.outdir)
                 # Check the serial connection. If not defined, re-establish.
                 try:
                     if ser is None:
@@ -225,7 +232,7 @@ def main(input_args):
 					                        stopbits=serial.STOPBITS_ONE,
 					                        bytesize=serial.EIGHTBITS,
 					                        timeout = 1)
-                        print("Reconnecting Serial Connection")
+                        print(f"Reconnecting Serial Connection with {input_args.device}")
                     # Read data from the instrument
                     data = ser.readlines()
                     if input_args.verbose:
@@ -242,11 +249,11 @@ def main(input_args):
                     if not ser is None:
                         ser.close()
                         ser = None
-                        print("Disconnecting")
-                    print("No Connection")
+                        print(f"Disconnecting from serial port {input_args.device}")
+                    print(f"No Connection with serial port {input_args.device}")
                     time.sleep(2)
         except KeyboardInterrupt:
-            print("Program interrupted, closing serial port...")
+            print(f"Program interrupted, closing serial port {input_args.device}")
         finally:
             if ser:
                 ser.close()
@@ -285,7 +292,7 @@ if __name__ == '__main__':
                         default="csv",
                         help="[str] output file format (csv or )"
                         )
-    parser.add_argument("--frequency",
+    parser.add_argument("--freq",
                         type=int,
                         default=5,
                         dest="freq",
