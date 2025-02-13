@@ -205,7 +205,7 @@ def publish_file(file_path):
     def upload_file(file_path):
         """Call the Waggle Plugin"""
         with Plugin() as plugin:
-            plugin.upload_file(file_path, timestamp=time.time_ns())
+            plugin.upload_file(file_path, timestamp=get_timestamp())
             print(f"Published {file_path}")
     # Define threads
     thread = threading.Thread(target=upload_file, args=(file_path,))
@@ -288,25 +288,20 @@ def main(input_args):
                         nfile.flush()
                         # If select parameter publishing is desired, upload via Waggle
                         if input_args.publish:
-                            print(publish_list[0]+1, data_out[publish_list[0]+1])
                             # Publish to the node
-                            i = 0
-                            for parm in publish_list:
-                                print(get_timestamp(),
-                                      publish_parms[i],
-                                      data_out[parm],
-                                      telegram_units[parm],
-                                      telegram[parm])
-                                i += 1
-                                ##plugin.publish(publish_parms[parm]
-                                ##                value=data_out[publish_list[parm]],
-                                ##                meta={"units" : telegram_units[publish_list[parm],
-                                ##                     "sensor" : "parsivel2",
-                                ##                     "description" : telegram[publish_list[parm]],
-                                ##                    },
-                                ##                scope="node",
-                                ##                timestamp=get_timestamp()
-                               ##)
+                            with Plugin() as plugin:
+                                i = 0
+                                for parm in publish_list:
+                                    plugin.publish(publish_parms[i],
+                                                   value=data_out[parm],
+                                                   meta={"units" : telegram_units[parm],
+                                                         "sensor" : "parsivel2",
+                                                         "description" : telegram[parm],
+                                                   },
+                                                   scope="node",
+                                                   timestamp=get_timestamp()
+                                    )
+                                    i += 1
 
                 except serial.SerialException:
                     if not ser is None:
@@ -371,7 +366,7 @@ if __name__ == '__main__':
     parser.add_argument("--outdir",
                         type=str,
                         dest="outdir",
-                        default="./data",
+                        default=".",
                         help="[str] Directory where to output files to"
                         )
     args = parser.parse_args()
