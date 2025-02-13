@@ -16,7 +16,7 @@ from pathlib import Path
 
 import serial
 
-from waggle.plugin import Plugin
+from waggle.plugin import Plugin, get_timestamp
 
 def define_telegram(site):
     """
@@ -35,7 +35,9 @@ def define_telegram(site):
         Parameter units for the instrument configuration
     publish_list : list (int)
         Integers of parameters to keep to publish to beehive separately from
-        the csv files.   
+        the csv files.
+    publish_parms : list (str)
+        Short names of parameters to publish to beehive.
     """
     if site == "adm" or site == "ADM":
         # instrument configured for following telegram:
@@ -79,6 +81,12 @@ def define_telegram(site):
                           "\tm/s",
                           "\t#"]
         publish_list = [4, 5, 6, 11, 12, 13]
+        publish_parms = ["parsivel.house.status",
+                         "parsivel.house.error",
+                         "parsivel.house.voltage",
+                         "parsivel.rain.intensity",
+                         "parsivel.rain.accum",
+                         "parsivel.radar"]
     elif site == "atmos" or site == "ATMOS":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
@@ -121,6 +129,12 @@ def define_telegram(site):
                           "\tm/s",
                           "\t#"]
         publish_list = [4, 5, 6, 11, 12, 13]
+        publish_parms = ["parsivel.house.status",
+                         "parsivel.house.error",
+                         "parsivel.house.voltage",
+                         "parsivel.rain.intensity",
+                         "parsivel.rain.accum",
+                         "parsivel.radar"]
     else:
         # default telegram from the factory
         # %13;%01;%02;%03;%07;%08;%34;%12;%10;%11;%18;
@@ -149,8 +163,13 @@ def define_telegram(site):
                           "\t#",
                           "\t#"]
         publish_list = [[2, 3, 5, 8, 11]]
+        publish_parms = ["parsivel.rain.intensity",
+                         "parsivel.rain.accum",
+                         "parsivel.radar",
+                         "parsivel.house.temp",
+                         "parsivel.house.status"]
 
-    return telegram, telegram_units, publish_list
+    return telegram, telegram_units, publish_list, publish_parms
 
 def list_files(img_dir):
     """
@@ -212,7 +231,7 @@ def main(input_args):
         print(f"Initializing file: {nfile.name}")
         # Write the file header information
         ## NOTE - dependent on telegram programmed into the instrument
-        telegram, telegram_units, publish_list = define_telegram(input_args.site)
+        telegram, telegram_units, publish_list, publish_parms = define_telegram(input_args.site)
         writer.writerow(telegram)
         writer.writerow(telegram_units)
         try:
@@ -270,6 +289,23 @@ def main(input_args):
                         # If select parameter publishing is desired, upload via Waggle
                         if input_args.publish:
                             print(publish_list[0]+1, data_out[publish_list[0]+1])
+                            # Publish to the node
+                            for parm in publish_list:
+                                print(get_timestamp(),
+                                      publish_parms[parm],
+                                      data_out[publish_list[parm]],
+                                      telegram_units[publish_list[parm]],
+                                      telegram[publish_list[parm]])
+                                ##plugin.publish(publish_parms[parm]
+                                ##                value=data_out[publish_list[parm]],
+                                ##                meta={"units" : telegram_units[publish_list[parm],
+                                ##                     "sensor" : "parsivel2",
+                                ##                     "description" : telegram[publish_list[parm]],
+                                ##                    },
+                                ##                scope="node",
+                                ##                timestamp=get_timestamp()
+                               ##)
+
                 except serial.SerialException:
                     if not ser is None:
                         ser.close()
