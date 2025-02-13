@@ -19,7 +19,24 @@ import serial
 from waggle.plugin import Plugin
 
 def define_telegram(site):
-    """Fuction to define the telegram for the specific site"""
+    """
+    Fuction to define the telegram for the specific site
+    
+    Parameters
+    ----------
+    site : str
+        Site Identifier to specify instrument configuration
+
+    Output
+    ------
+    telegram : list (str)
+        Parameter descriptions for the instrument configuration
+    telegram_units : list (str)
+        Parameter units for the instrument configuration
+    publish_list : list (int)
+        Integers of parameters to keep to publish to beehive separately from
+        the csv files.   
+    """
     if site == "adm" or site == "ADM":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
@@ -61,6 +78,7 @@ def define_telegram(site):
                           "\tlog10(1/m3 mm)",
                           "\tm/s",
                           "\t#"]
+        publish_list = [4, 5, 6, 11, 12, 13]
     elif site == "atmos" or site == "ATMOS":
         # instrument configured for following telegram:
         #%13;%21;%20;%18;%25;%17;%16;%27;%28;%12;%01;%02;%07;%11;%60;%90;%91;%93
@@ -102,6 +120,7 @@ def define_telegram(site):
                           "\tlog10(1/m3 mm)",
                           "\tm/s",
                           "\t#"]
+        publish_list = [4, 5, 6, 11, 12, 13]
     else:
         # default telegram from the factory
         # %13;%01;%02;%03;%07;%08;%34;%12;%10;%11;%18;
@@ -129,8 +148,9 @@ def define_telegram(site):
                           "\t#",
                           "\t#",
                           "\t#"]
+        publish_list = [[2, 3, 5, 8, 11]]
 
-    return telegram, telegram_units
+    return telegram, telegram_units, publish_list
 
 def list_files(img_dir):
     """
@@ -168,9 +188,7 @@ def publish_file(file_path):
         with Plugin() as plugin:
             plugin.upload_file(file_path, timestamp=time.time_ns())
             print(f"Published {file_path}")
-    print(file_path)
     # Define threads
-    ##upload_file(file_path)
     thread = threading.Thread(target=upload_file, args=(file_path,))
     thread.start()
     thread.join()
@@ -194,7 +212,7 @@ def main(input_args):
         print(f"Initializing file: {nfile.name}")
         # Write the file header information
         ## NOTE - dependent on telegram programmed into the instrument
-        telegram, telegram_units = define_telegram(input_args.site)
+        telegram, telegram_units, publish_list = define_telegram(input_args.site)
         writer.writerow(telegram)
         writer.writerow(telegram_units)
         try:
@@ -211,7 +229,9 @@ def main(input_args):
                     if input_args.verbose:
                         # check on the files
                         list_files(input_args.outdir)
-                    # If publishing is desired, upload via Waggle
+                    # Upload file via Waggle
+                    publish_file(nfile.name)
+                    # If select parameter publishing is desired, upload via Waggle
                     if input_args.publish:
                         publish_file(nfile.name)
                     # Define a new filename
@@ -237,16 +257,19 @@ def main(input_args):
                         print(f"Reconnecting Serial Connection with {input_args.device}")
                     # Read data from the instrument
                     data = ser.readlines()
-                    ##if input_args.verbose:
-                    ##    print(datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
-                    ##    print("\n")
-                    ##    print(data)
+                    if input_args.verbose:
+                        print(datetime.now(timezone.utc).strftime('%Y%m%d.%H%M%S'))
+                        print("\n")
+                        print(data)
                     if data:
                         # Assemble the output list
                         data_out = [datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')]
                         data_out.extend(data[0].decode('utf-8').strip().split(';'))
                         writer.writerow(data_out)
                         nfile.flush()
+                        # If select parameter publishing is desired, upload via Waggle
+                        if input_args.publish:
+                            print(publish_list[0]+1, data_out[publish_list[0]+1])
                 except serial.SerialException:
                     if not ser is None:
                         ser.close()
@@ -274,7 +297,8 @@ if __name__ == '__main__':
                         type=bool,
                         dest="publish",
                         default=True,
-                        help="[Boolean|Default True] Enable Publishing of Files to Beehive"
+                        help=("[Boolean|Default True] Enable Publishing " +
+                              "of Select Parameters to Beehive")
                         )
     parser.add_argument("--device",
                         type=str,
