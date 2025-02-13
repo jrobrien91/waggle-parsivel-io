@@ -170,8 +170,8 @@ def publish_file(file_path):
             print(f"Published {file_path}")
     print(file_path)
     # Define threads
-    upload_file(file_path)
-    thread = threading.Thread(target=upload_file, args=file_path)
+    ##upload_file(file_path)
+    thread = threading.Thread(target=upload_file, args=(file_path,))
     thread.start()
     thread.join()
 
