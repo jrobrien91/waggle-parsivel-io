@@ -162,7 +162,7 @@ def define_telegram(site):
                           "\t#",
                           "\t#",
                           "\t#"]
-        publish_list = [[2, 3, 5, 8, 11]]
+        publish_list = [2, 3, 5, 8, 11]
         publish_parms = ["parsivel.rain.intensity",
                          "parsivel.rain.accum",
                          "parsivel.radar",
@@ -290,12 +290,14 @@ def main(input_args):
                         if input_args.publish:
                             print(publish_list[0]+1, data_out[publish_list[0]+1])
                             # Publish to the node
+                            i = 0
                             for parm in publish_list:
                                 print(get_timestamp(),
-                                      publish_parms[parm],
-                                      data_out[publish_list[parm]],
-                                      telegram_units[publish_list[parm]],
-                                      telegram[publish_list[parm]])
+                                      publish_parms[i],
+                                      data_out[parm],
+                                      telegram_units[parm],
+                                      telegram[parm])
+                                i += 1
                                 ##plugin.publish(publish_parms[parm]
                                 ##                value=data_out[publish_list[parm]],
                                 ##                meta={"units" : telegram_units[publish_list[parm],
@@ -332,8 +334,8 @@ if __name__ == '__main__':
     parser.add_argument("--publish",
                         type=bool,
                         dest="publish",
-                        default=True,
-                        help=("[Boolean|Default True] Enable Publishing " +
+                        default=False,
+                        help=("[Boolean|Default False] Enable Publishing " +
                               "of Select Parameters to Beehive")
                         )
     parser.add_argument("--device",
