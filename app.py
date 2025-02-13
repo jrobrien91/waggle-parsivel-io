@@ -167,13 +167,13 @@ def publish_file(file_path):
         """Call the Waggle Plugin"""
         with Plugin() as plugin:
             plugin.upload_file(file_path, timestamp=time.time_ns())
-        print(f"Published {file_path}")
-
+            print(f"Published {file_path}")
+    print(file_path)
     # Define threads
     upload_file(file_path)
-    ##thread = threading.Thread(target=upload_file, args=file_path)
-    ##thread.start()
-    ##thread.join()
+    thread = threading.Thread(target=upload_file, args=file_path)
+    thread.start()
+    thread.join()
 
 def main(input_args):
     """Establish Serial Connection and Write Parsivel Data to file"""
