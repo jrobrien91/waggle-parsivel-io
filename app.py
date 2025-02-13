@@ -248,11 +248,8 @@ def main(input_args):
                     if input_args.verbose:
                         # check on the files
                         list_files(input_args.outdir)
-                    # Upload file via Waggle
+                   # Upload file via Waggle
                     publish_file(nfile.name)
-                    # If select parameter publishing is desired, upload via Waggle
-                    if input_args.publish:
-                        publish_file(nfile.name)
                     # Define a new filename
                     csv_path = define_filename(input_args.site, input_args.outdir)
                     # Open the new file
