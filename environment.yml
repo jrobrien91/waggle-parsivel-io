@@ -1,0 +1,14 @@
+name: waggle_parsivel 
+channels:
+  - conda-forge
+  - defaults
+  - pyviz
+dependencies:
+  - python=3.9
+  - pyserial
+  - parse
+  - jupyterlab
+  - pip
+  - pip:
+    - pywaggle
+    - sage-data-client
