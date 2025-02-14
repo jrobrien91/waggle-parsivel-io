@@ -285,6 +285,7 @@ def main(input_args):
                         nfile.flush()
                         # If select parameter publishing is desired, upload via Waggle
                         if input_args.publish:
+                            print("Publishing Select Parameters to Beehive")
                             # Publish to the node
                             with Plugin() as plugin:
                                 i = 0
