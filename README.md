@@ -91,3 +91,24 @@ df = sage_data_client.query(
     }
 )
 ```
+## SAGE Job Script Example
+```bash
+name: atmos-parsivel
+plugins:
+- name: waggle-parsivel-io
+  pluginSpec:
+    image: registry.sagecontinuum.org/jrobrien/waggle-parsivel-io:0.25.02.04
+    args:
+    - --device
+    - /dev/ttyUSB5
+    privileged: true
+    selector:
+      zone: core
+nodeTags: []
+nodes:
+  W09F: true
+scienceRules:
+- 'schedule("waggle-parsivel-io"): cronjob("waggle-parsivel-io", "*/10 * * * *")'
+successCriteria:
+- WallClock('1day')
+```
